@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from "react";
 
 // Uses @zoom/meetingsdk (Embedded Client) so the meeting UI renders
 // fully inside our own page - no redirect to zoom.us, no Zoom branding.
-// Docs: https://developers.zoom.us/docs/meeting-sdk/web/embedded/
+// IMPORTANT: Zoom's own CSS must be imported, or the UI renders unstyled
+// instead of looking like the real Zoom client.
 const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
   const containerRef = useRef(null);
   const clientRef = useRef(null);
@@ -11,8 +12,13 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
     let isMounted = true;
 
     const startMeeting = async () => {
-      // Dynamic import keeps initial bundle small since this SDK is heavy
       const { default: ZoomMtgEmbedded } = await import("@zoom/meetingsdk/embedded");
+
+      // Zoom's own stylesheets - required for the native Zoom look
+      // (control bar, video tiles, buttons). Without these the SDK
+      // renders as plain unstyled HTML.
+      await import("@zoom/meetingsdk/dist/css/bootstrap.css");
+      await import("@zoom/meetingsdk/dist/css/react-select.css");
 
       const client = ZoomMtgEmbedded.createClient();
       clientRef.current = client;
@@ -22,9 +28,14 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
       await client.init({
         zoomAppRoot: containerRef.current,
         language: "en-US",
+        patchJsMedia: true,
         customize: {
-          video: { isResizable: true, viewSizes: { default: { width: 1000, height: 600 } } },
-          // Hides Zoom's own branding elements as much as the SDK allows
+          video: {
+            isResizable: true,
+            viewSizes: {
+              default: { width: containerRef.current.offsetWidth, height: 600 },
+            },
+          },
           meetingInfo: ["topic", "participant"],
         },
       });
@@ -52,8 +63,13 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
   }, [meetingConfig]);
 
   return (
-    <div className="w-full h-full min-h-[500px] rounded-2xl overflow-hidden bg-black">
-      <div ref={containerRef} id="zmmtg-root-container" className="w-full h-full" />
+    <div className="w-full rounded-2xl overflow-visible bg-black" style={{ minHeight: 600 }}>
+      <div
+        ref={containerRef}
+        id="zmmtg-root-container"
+        className="w-full"
+        style={{ position: "relative", minHeight: 600 }}
+      />
     </div>
   );
 };
