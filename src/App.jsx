@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import ThankYou from "./pages/ThankYou";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/thank-you" element={<ThankYou />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

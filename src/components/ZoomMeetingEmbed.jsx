@@ -27,7 +27,7 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName }) => {
       if (zmmtgRoot) zmmtgRoot.style.display = "block";
 
       ZoomMtg.init({
-        leaveUrl: window.location.href,
+     leaveUrl: `${window.location.origin}/thank-you`,
         disableZoomLogo: true, // hides the "Zoom Workplace" logo/header
         patchJsMedia: true,
         success: () => {
