@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import TopBar from "../components/TopBar";
+import ZoomMeetingEmbed from "../components/ZoomMeetingEmbed";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [meetingConfig, setMeetingConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,9 +33,7 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       const res = await api.post("/live/go-live");
-      // Opens the REAL Zoom app/website in a new tab as the host -
-      // full native Zoom experience, not embedded on our site.
-      window.open(res.data.data.startUrl, "_blank");
+      setMeetingConfig(res.data.data);
       await fetchProfile();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to go live. Try again.");
@@ -46,7 +46,9 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       await api.patch("/live/end-live");
+      setMeetingConfig(null);
       await fetchProfile();
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to end live session.");
     } finally {
@@ -101,6 +103,12 @@ const Dashboard = () => {
     );
   }
 
+  // While live, Zoom's Client View takes over the FULL page (injected into
+  // #zmmtg-root), so we hide our own dashboard chrome underneath it.
+  if (profile?.isLive && meetingConfig) {
+    return <ZoomMeetingEmbed meetingConfig={meetingConfig} userName={profile.name} />;
+  }
+
   return (
     <div className="min-h-screen bg-base">
       <TopBar />
@@ -112,30 +120,18 @@ const Dashboard = () => {
               Welcome, {profile?.name}
             </h1>
             <p className="text-muted text-sm">
-              {profile?.isLive
-                ? "You're live right now in real Zoom. Viewers can join from the website."
-                : "You're approved. Go live whenever you're ready — real Zoom will open in a new tab."}
+              You're approved. Go live whenever you're ready.
             </p>
           </div>
 
-          {!profile?.isLive ? (
-            <button
-              onClick={handleGoLive}
-              disabled={actionLoading}
-              className="bg-signal text-base font-semibold text-sm rounded-lg px-5 py-2.5 hover:brightness-110 transition disabled:opacity-50 flex items-center gap-2"
-            >
-              <span className="w-2 h-2 rounded-full bg-base" />
-              {actionLoading ? "Starting..." : "Go Live"}
-            </button>
-          ) : (
-            <button
-              onClick={handleEndLive}
-              disabled={actionLoading}
-              className="bg-danger text-white font-semibold text-sm rounded-lg px-5 py-2.5 hover:brightness-110 transition disabled:opacity-50"
-            >
-              {actionLoading ? "Ending..." : "End Live"}
-            </button>
-          )}
+          <button
+            onClick={handleGoLive}
+            disabled={actionLoading}
+            className="bg-signal text-base font-semibold text-sm rounded-lg px-5 py-2.5 hover:brightness-110 transition disabled:opacity-50 flex items-center gap-2"
+          >
+            <span className="w-2 h-2 rounded-full bg-base" />
+            {actionLoading ? "Starting..." : "Go Live"}
+          </button>
         </div>
 
         {error && (
@@ -144,20 +140,11 @@ const Dashboard = () => {
           </div>
         )}
 
-        {profile?.isLive ? (
-          <div className="border border-line rounded-2xl py-16 text-center bg-surface">
-            <p className="text-muted text-sm">
-              Zoom opened in a new tab. If it didn't open, check your browser's
-              popup blocker, or click "Go Live" again to relaunch it.
-            </p>
-          </div>
-        ) : (
-          <div className="border border-dashed border-line rounded-2xl py-20 text-center bg-surface">
-            <p className="text-muted text-sm">
-              Click "Go Live" to open real Zoom in a new tab and start streaming.
-            </p>
-          </div>
-        )}
+        <div className="border border-dashed border-line rounded-2xl py-20 text-center bg-surface">
+          <p className="text-muted text-sm">
+            Click "Go Live" to launch the full native Zoom experience right here on this page.
+          </p>
+        </div>
       </div>
     </div>
   );
