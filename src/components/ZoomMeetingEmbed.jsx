@@ -32,9 +32,7 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
         customize: {
           video: {
             isResizable: true,
-            viewSizes: {
-              default: { width: containerRef.current.offsetWidth, height: 600 },
-            },
+            popper: { disableDraggable: true },
           },
           meetingInfo: ["topic", "participant"],
         },
@@ -63,12 +61,12 @@ const ZoomMeetingEmbed = ({ meetingConfig, userName, onLeave }) => {
   }, [meetingConfig]);
 
   return (
-    <div className="w-full rounded-2xl overflow-visible bg-black" style={{ minHeight: 600 }}>
+    <div className="w-full rounded-2xl overflow-visible bg-black" style={{ minHeight: 700 }}>
       <div
         ref={containerRef}
         id="zmmtg-root-container"
         className="w-full"
-        style={{ position: "relative", minHeight: 600 }}
+        style={{ position: "relative", width: "100%", minHeight: 700 }}
       />
     </div>
   );
