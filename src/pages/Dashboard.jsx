@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import TopBar from "../components/TopBar";
-import ZoomMeetingEmbed from "../components/ZoomMeetingEmbed";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
-  const [meetingConfig, setMeetingConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +31,9 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       const res = await api.post("/live/go-live");
-      setMeetingConfig(res.data.data);
+      // Opens the REAL Zoom app/website in a new tab as the host -
+      // full native Zoom experience, not embedded on our site.
+      window.open(res.data.data.startUrl, "_blank");
       await fetchProfile();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to go live. Try again.");
@@ -46,7 +46,6 @@ const Dashboard = () => {
     setActionLoading(true);
     try {
       await api.patch("/live/end-live");
-      setMeetingConfig(null);
       await fetchProfile();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to end live session.");
@@ -63,7 +62,6 @@ const Dashboard = () => {
     );
   }
 
-  // ----- Pending status -----
   if (profile?.status === "pending") {
     return (
       <div className="min-h-screen bg-base">
@@ -84,7 +82,6 @@ const Dashboard = () => {
     );
   }
 
-  // ----- Rejected status -----
   if (profile?.status === "rejected") {
     return (
       <div className="min-h-screen bg-base">
@@ -104,7 +101,6 @@ const Dashboard = () => {
     );
   }
 
-  // ----- Accepted status: main studio -----
   return (
     <div className="min-h-screen bg-base">
       <TopBar />
@@ -117,8 +113,8 @@ const Dashboard = () => {
             </h1>
             <p className="text-muted text-sm">
               {profile?.isLive
-                ? "You're live right now. Viewers can join from the website."
-                : "You're approved. Go live whenever you're ready."}
+                ? "You're live right now in real Zoom. Viewers can join from the website."
+                : "You're approved. Go live whenever you're ready — real Zoom will open in a new tab."}
             </p>
           </div>
 
@@ -148,19 +144,17 @@ const Dashboard = () => {
           </div>
         )}
 
-        {profile?.isLive && meetingConfig ? (
-          <ZoomMeetingEmbed meetingConfig={meetingConfig} userName={profile.name} />
-        ) : profile?.isLive && !meetingConfig ? (
+        {profile?.isLive ? (
           <div className="border border-line rounded-2xl py-16 text-center bg-surface">
             <p className="text-muted text-sm">
-              You're marked live from a previous session. End it below to start fresh,
-              or refresh this page if the video should be showing.
+              Zoom opened in a new tab. If it didn't open, check your browser's
+              popup blocker, or click "Go Live" again to relaunch it.
             </p>
           </div>
         ) : (
           <div className="border border-dashed border-line rounded-2xl py-20 text-center bg-surface">
             <p className="text-muted text-sm">
-              Your live video will appear here once you click "Go Live".
+              Click "Go Live" to open real Zoom in a new tab and start streaming.
             </p>
           </div>
         )}
